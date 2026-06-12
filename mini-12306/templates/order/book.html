@@ -2,48 +2,66 @@
 {% block title %}购票 - Mini-12306{% endblock %}
 {% block content %}
 <div class="container my-4">
+    <div class="page-header">
+        <h4><i class="bi bi-ticket-perforated text-primary me-2"></i>填写购票信息</h4>
+    </div>
     <div class="row">
-        <div class="col-md-8">
-            <div class="card p-4">
-                <h4 class="mb-4">填写购票信息</h4>
+        <div class="col-lg-8">
+            <div class="card p-4 mb-4">
                 {% set t = schedule.train %}
-                <div class="alert alert-info">
-                    <strong>{{ t.train_no }}</strong> {{ t.from_station.name }} → {{ t.to_station.name }}
-                    · {{ schedule.travel_date }} {{ t.departure_time.strftime('%H:%M') }} 开
+                <div class="ticket-item mb-4">
+                    <div class="fw-bold fs-5 mb-1">
+                        <span class="text-primary">{{ t.train_no }}</span>
+                        {{ t.from_station.name }}
+                        <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                        {{ t.to_station.name }}
+                    </div>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar3 me-1"></i>{{ schedule.travel_date }}
+                        {{ t.departure_time.strftime('%H:%M') }} 开
+                    </small>
                 </div>
+
                 <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">选择席别</label>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">选择席别</label>
                         {% for inv in inventories %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="seat_type" id="seat_{{ loop.index }}"
-                                   value="{{ inv.seat_type }}" {% if inv.remaining <= 0 %}disabled{% endif %}
+                        <label class="option-card d-block {% if inv.remaining <= 0 %}opacity-50{% endif %}">
+                            <input type="radio" name="seat_type" value="{{ inv.seat_type }}"
+                                   {% if inv.remaining <= 0 %}disabled{% endif %}
                                    {% if loop.first and inv.remaining > 0 %}checked{% endif %} required>
-                            <label class="form-check-label" for="seat_{{ loop.index }}">
-                                {{ inv.seat_type }} — ¥{{ "%.1f"|format(inv.price) }}
-                                <span class="text-muted">（余票 {{ inv.remaining }}）</span>
-                            </label>
-                        </div>
+                            <span class="fw-semibold">{{ inv.seat_type }}</span>
+                            <span class="text-danger fw-bold">¥{{ "%.1f"|format(inv.price) }}</span>
+                            <span class="text-muted small">余票 {{ inv.remaining }}</span>
+                        </label>
                         {% endfor %}
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">选择乘车人</label>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">选择乘车人</label>
                         {% if passengers %}
                         {% for p in passengers %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="passenger_id" id="p_{{ p.id }}"
-                                   value="{{ p.id }}" {% if loop.first %}checked{% endif %} required>
-                            <label class="form-check-label" for="p_{{ p.id }}">
-                                {{ p.name }} · {{ p.id_card[:6] }}****{{ p.id_card[-4:] }}
-                            </label>
-                        </div>
+                        <label class="option-card d-block">
+                            <input type="radio" name="passenger_id" value="{{ p.id }}"
+                                   {% if loop.first %}checked{% endif %} required>
+                            {{ p.name }}
+                            <span class="text-muted small">{{ p.id_card[:6] }}****{{ p.id_card[-4:] }}</span>
+                        </label>
                         {% endfor %}
                         {% else %}
-                        <p class="text-warning">暂无乘车人，请先 <a href="{{ url_for('order.passengers') }}">添加乘车人</a></p>
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            暂无乘车人，请先 <a href="{{ url_for('order.passengers') }}">添加乘车人</a>
+                        </div>
                         {% endif %}
                     </div>
-                    <button type="submit" class="btn btn-primary" {% if not passengers %}disabled{% endif %}>提交订单</button>
-                    <a href="{{ url_for('train.detail', schedule_id=schedule.id) }}" class="btn btn-link">取消</a>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" {% if not passengers %}disabled{% endif %}>
+                            <i class="bi bi-check-circle me-1"></i>提交订单
+                        </button>
+                        <a href="{{ url_for('train.detail', schedule_id=schedule.id) }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
                 </form>
             </div>
         </div>

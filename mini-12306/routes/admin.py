@@ -1,8 +1,9 @@
-from datetime import datetime, date, time, timedelta
+from datetime import datetime, time, timedelta
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from extensions import db
+from timezone import today
 from models import (
     User,
     Station,
@@ -32,7 +33,7 @@ def dashboard():
         "trains": Train.query.count(),
         "orders": Order.query.count(),
         "today_orders": Order.query.filter(
-            Order.created_at >= datetime.combine(date.today(), time.min)
+            Order.created_at >= datetime.combine(today(), time.min)
         ).count(),
     }
     recent_logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(10).all()

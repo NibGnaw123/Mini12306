@@ -6,6 +6,7 @@ from flask import flash, redirect, session, url_for, request
 
 from extensions import db
 from models import AuditLog
+from timezone import now
 
 
 def login_required(f):
@@ -31,7 +32,7 @@ def admin_required(f):
 
 
 def generate_order_no():
-    return f"ORD{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:6].upper()}"
+    return f"ORD{now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:6].upper()}"
 
 
 def generate_seat_no(seat_type, index):

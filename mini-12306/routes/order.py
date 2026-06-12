@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from timezone import now
 
 from flask import (
     Blueprint,
@@ -201,7 +203,7 @@ def refund(ticket_id):
     schedule = ticket.schedule
     train = schedule.train
     depart_dt = combine_datetime(schedule.travel_date, train.departure_time)
-    if datetime.now() > depart_dt - timedelta(hours=2):
+    if now() > depart_dt - timedelta(hours=2):
         flash("发车前2小时内不可退票", "danger")
         return redirect(url_for("order.my_orders"))
 
@@ -264,7 +266,7 @@ def change(ticket_id):
     schedule = ticket.schedule
     train = schedule.train
     depart_dt = combine_datetime(schedule.travel_date, train.departure_time)
-    if datetime.now() > depart_dt - timedelta(
+    if now() > depart_dt - timedelta(
         hours=current_app.config["CHANGE_DEADLINE_HOURS"]
     ):
         flash("发车前2小时内不可改签", "danger")
@@ -320,7 +322,7 @@ def change(ticket_id):
             user_id=session["user_id"],
             status="已出票",
             total_amount=inventory.price,
-            paid_at=datetime.utcnow(),
+            paid_at=now(),
         )
         db.session.add(new_order)
         db.session.flush()

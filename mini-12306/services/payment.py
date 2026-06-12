@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime
+
+from timezone import now
 
 
 def create_payment(amount):
@@ -17,7 +18,7 @@ def process_payment(payment_no, amount):
         "payment_no": payment_no,
         "amount": amount,
         "status": "支付成功",
-        "paid_at": datetime.utcnow(),
+        "paid_at": now(),
     }
 
 
@@ -27,5 +28,5 @@ def process_refund(amount):
         "refund_no": f"REF{uuid.uuid4().hex[:16].upper()}",
         "amount": amount,
         "status": "退款成功",
-        "refunded_at": datetime.utcnow(),
+        "refunded_at": now(),
     }

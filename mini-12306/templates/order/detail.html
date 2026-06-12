@@ -2,15 +2,39 @@
 {% block title %}订单详情{% endblock %}
 {% block content %}
 <div class="container my-4">
+    <div class="page-header">
+        <h4><i class="bi bi-receipt text-primary me-2"></i>订单详情</h4>
+    </div>
     <div class="card p-4">
-        <h4>订单详情</h4>
-        <hr>
-        <p><strong>订单号：</strong>{{ order.order_no }}</p>
-        <p><strong>状态：</strong>{{ order.status }}</p>
-        <p><strong>金额：</strong>¥{{ "%.2f"|format(order.total_amount) }}</p>
-        <p><strong>下单时间：</strong>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-        {% if order.paid_at %}<p><strong>支付时间：</strong>{{ order.paid_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>{% endif %}
-        <a href="{{ url_for('order.my_orders') }}" class="btn btn-link">返回订单列表</a>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="text-muted small">订单号</div>
+                <div class="fw-semibold">{{ order.order_no }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">状态</div>
+                <span class="badge badge-status bg-{% if order.status == '待支付' %}warning text-dark{% elif order.status == '已出票' %}success{% else %}info{% endif %}">
+                    {{ order.status }}
+                </span>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">金额</div>
+                <div class="text-danger fw-bold fs-5">¥{{ "%.2f"|format(order.total_amount) }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">下单时间</div>
+                <div>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+            </div>
+            {% if order.paid_at %}
+            <div class="col-md-6">
+                <div class="text-muted small">支付时间</div>
+                <div>{{ order.paid_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+            </div>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('order.my_orders') }}" class="btn btn-link mt-4 px-0">
+            <i class="bi bi-arrow-left"></i> 返回订单列表
+        </a>
     </div>
 </div>
 {% endblock %}

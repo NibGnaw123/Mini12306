@@ -1,8 +1,9 @@
-from datetime import datetime, date, time
+from datetime import date, time
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
+from timezone import now
 
 
 class User(db.Model):
@@ -15,7 +16,7 @@ class User(db.Model):
     id_card = db.Column(db.String(18), unique=True, nullable=False)
     phone = db.Column(db.String(11), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
 
     passengers = db.relationship("Passenger", backref="user", lazy=True)
     orders = db.relationship("Order", backref="user", lazy=True)
@@ -36,7 +37,7 @@ class Passenger(db.Model):
     name = db.Column(db.String(50), nullable=False)
     id_card = db.Column(db.String(18), nullable=False)
     phone = db.Column(db.String(11), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
 
 
 class Station(db.Model):
@@ -100,7 +101,7 @@ class Order(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     status = db.Column(db.String(20), default="待支付")
     total_amount = db.Column(db.Float, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
     paid_at = db.Column(db.DateTime)
 
     tickets = db.relationship("Ticket", backref="order", lazy=True)
@@ -133,7 +134,7 @@ class Payment(db.Model):
     amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default="待支付")
     payment_no = db.Column(db.String(32), unique=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
     paid_at = db.Column(db.DateTime)
 
 
@@ -146,7 +147,7 @@ class Refund(db.Model):
     amount = db.Column(db.Float, nullable=False)
     fee = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default="处理中")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
 
     ticket = db.relationship("Ticket")
 
@@ -158,7 +159,7 @@ class ChangeRecord(db.Model):
     old_ticket_id = db.Column(db.Integer, db.ForeignKey("tickets.id"), nullable=False)
     new_ticket_id = db.Column(db.Integer, db.ForeignKey("tickets.id"), nullable=False)
     price_diff = db.Column(db.Float, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
 
     new_ticket = db.relationship("Ticket", foreign_keys=[new_ticket_id])
 
@@ -171,7 +172,7 @@ class Notification(db.Model):
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
 
 
 class AuditLog(db.Model):
@@ -182,6 +183,6 @@ class AuditLog(db.Model):
     action = db.Column(db.String(100), nullable=False)
     detail = db.Column(db.Text)
     ip = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now)
 
     user = db.relationship("User")

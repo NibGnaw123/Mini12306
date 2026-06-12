@@ -1,4 +1,8 @@
-from flask import Flask, session
+import os
+
+os.environ.setdefault("TZ", "Asia/Shanghai")
+
+from flask import Flask, flash, redirect, request, session, url_for
 
 from config import Config
 from extensions import db
@@ -13,6 +17,16 @@ def create_app():
 
     db.init_app(app)
     register_blueprints(app)
+
+    public_endpoints = {"auth.login", "auth.register", "static"}
+
+    @app.before_request
+    def require_login():
+        if request.endpoint in public_endpoints:
+            return
+        if "user_id" not in session:
+            flash("请先登录", "warning")
+            return redirect(url_for("auth.login", next=request.url))
 
     @app.context_processor
     def inject_notifications():

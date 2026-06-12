@@ -1,3 +1,5 @@
+from urllib.parse import urlparse, urljoin
+
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from extensions import db
@@ -7,6 +9,23 @@ from services.notify import create_notification
 from utils import log_action
 
 auth_bp = Blueprint("auth", __name__)
+
+
+def _is_safe_redirect(target):
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
+
+
+def _redirect_after_login(user):
+    next_url = request.args.get("next") or request.form.get("next")
+    if _is_safe_redirect(next_url):
+        return redirect(next_url)
+    if user.is_admin:
+        return redirect(url_for("admin.dashboard"))
+    return redirect(url_for("main.index"))
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -47,6 +66,11 @@ def register():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    if session.get("user_id"):
+        user = User.query.get(session["user_id"])
+        if user:
+            return _redirect_after_login(user)
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
@@ -62,12 +86,9 @@ def login():
         log_action(user.id, "用户登录")
         db.session.commit()
         flash("登录成功", "success")
+        return _redirect_after_login(user)
 
-        if user.is_admin:
-            return redirect(url_for("admin.dashboard"))
-        return redirect(url_for("main.index"))
-
-    return render_template("auth/login.html")
+    return render_template("auth/login.html", next=request.args.get("next", ""))
 
 
 @auth_bp.route("/logout")
@@ -78,4 +99,4 @@ def logout():
         db.session.commit()
     session.clear()
     flash("已退出登录", "info")
-    return redirect(url_for("main.index"))
+    return redirect(url_for("auth.login"))
