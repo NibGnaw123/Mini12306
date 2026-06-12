@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}订单详情{% endblock %}
+{% block content %}
+<div class="container my-4">
+    <div class="card p-4">
+        <h4>订单详情</h4>
+        <hr>
+        <p><strong>订单号：</strong>{{ order.order_no }}</p>
+        <p><strong>状态：</strong>{{ order.status }}</p>
+        <p><strong>金额：</strong>¥{{ "%.2f"|format(order.total_amount) }}</p>
+        <p><strong>下单时间：</strong>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        {% if order.paid_at %}<p><strong>支付时间：</strong>{{ order.paid_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>{% endif %}
+        <a href="{{ url_for('order.my_orders') }}" class="btn btn-link">返回订单列表</a>
+    </div>
+</div>
+{% endblock %}

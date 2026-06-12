@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}车次查询 - Mini-12306{% endblock %}
+{% block content %}
+<div class="container my-4">
+    <div class="card p-4 mb-4">
+        <h4 class="mb-3"><i class="bi bi-search"></i> 车次查询</h4>
+        <form method="POST" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">出发地</label>
+                <select name="from_station" class="form-select" required>
+                    <option value="">请选择</option>
+                    {% for s in stations %}
+                    <option value="{{ s.name }}" {% if s.name == from_station %}selected{% endif %}>{{ s.city }} - {{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">目的地</label>
+                <select name="to_station" class="form-select" required>
+                    <option value="">请选择</option>
+                    {% for s in stations %}
+                    <option value="{{ s.name }}" {% if s.name == to_station %}selected{% endif %}>{{ s.city }} - {{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">出发日期</label>
+                <input type="date" name="travel_date" class="form-control" value="{{ travel_date }}" required>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">查询</button>
+            </div>
+        </form>
+    </div>
+
+    {% if results is not none and request.method == 'POST' %}
+    <div class="card">
+        <div class="card-header bg-white"><strong>查询结果</strong>（共 {{ results|length }} 趟列车）</div>
+        {% if results %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>车次</th><th>出发站</th><th>到达站</th>
+                        <th>出发</th><th>到达</th><th>历时</th><th>席别余票</th><th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    {% set sch = item.schedule %}
+                    {% set t = sch.train %}
+                    <tr>
+                        <td><strong class="text-primary">{{ t.train_no }}</strong><br><small class="text-muted">{{ t.name }}</small></td>
+                        <td>{{ t.from_station.name }}</td>
+                        <td>{{ t.to_station.name }}</td>
+                        <td>{{ t.departure_time.strftime('%H:%M') }}</td>
+                        <td>{{ t.arrival_time.strftime('%H:%M') }}</td>
+                        <td>{{ t.duration_minutes // 60 }}h{{ t.duration_minutes % 60 }}m</td>
+                        <td>
+                            {% for inv in item.inventories %}
+                            <span class="badge seat-badge {% if inv.remaining > 0 %}bg-success{% else %}bg-secondary{% endif %} me-1">
+                                {{ inv.seat_type }}: {{ inv.remaining }}
+                            </span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('train.detail', schedule_id=sch.id) }}" class="btn btn-sm btn-outline-primary">详情</a>
+                            {% if session.get('user_id') %}
+                            <a href="{{ url_for('order.book', schedule_id=sch.id) }}" class="btn btn-sm btn-primary">购票</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card-body text-center text-muted py-5">未找到符合条件的车次</div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

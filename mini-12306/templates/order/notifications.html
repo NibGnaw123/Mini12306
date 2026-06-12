@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}消息通知{% endblock %}
+{% block content %}
+<div class="container my-4">
+    <h4 class="mb-4"><i class="bi bi-bell"></i> 消息通知</h4>
+    {% if notifications %}
+    {% for n in notifications %}
+    <div class="card mb-2 {% if not n.is_read %}border-primary{% endif %}">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between">
+                <strong>{{ n.title }}</strong>
+                <small class="text-muted">{{ n.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            </div>
+            <p class="mb-0 mt-1 text-muted">{{ n.content }}</p>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card text-center py-5 text-muted">暂无通知</div>
+    {% endif %}
+</div>
+{% endblock %}

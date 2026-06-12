@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}首页 - Mini-12306{% endblock %}
+{% block content %}
+<div class="hero text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-3"><i class="bi bi-train-front"></i> Mini-12306</h1>
+        <p class="lead mb-4">简化版铁路在线票务系统 — 查询、购票、退票、改签一站完成</p>
+        <a href="{{ url_for('train.search') }}" class="btn btn-light btn-lg px-5">
+            <i class="bi bi-search"></i> 查询车次
+        </a>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card text-center p-4 h-100">
+                <i class="bi bi-person-check fs-1 text-primary mb-3"></i>
+                <h5>实名注册</h5>
+                <p class="text-muted small">身份证实名认证，安全购票</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-4 h-100">
+                <i class="bi bi-ticket-perforated fs-1 text-success mb-3"></i>
+                <h5>在线购票</h5>
+                <p class="text-muted small">选车次、选席别，快速下单</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-4 h-100">
+                <i class="bi bi-arrow-repeat fs-1 text-warning mb-3"></i>
+                <h5>退票改签</h5>
+                <p class="text-muted small">灵活处理行程变更</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-4 h-100">
+                <i class="bi bi-bell fs-1 text-info mb-3"></i>
+                <h5>消息通知</h5>
+                <p class="text-muted small">支付、退票、改签实时提醒</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

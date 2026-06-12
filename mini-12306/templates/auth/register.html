@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}注册 - Mini-12306{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h3 class="text-center mb-4">实名注册</h3>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">密码</label>
+                        <input type="password" name="password" class="form-control" minlength="6" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">真实姓名</label>
+                        <input type="text" name="real_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">身份证号</label>
+                        <input type="text" name="id_card" class="form-control" maxlength="18" required
+                               placeholder="18位身份证号码">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">手机号</label>
+                        <input type="tel" name="phone" class="form-control" maxlength="11" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">注册</button>
+                </form>
+                <p class="text-center mt-3 mb-0 text-muted small">
+                    注册时将调用实名认证服务验证身份信息
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

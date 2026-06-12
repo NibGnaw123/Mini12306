@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}购票 - Mini-12306{% endblock %}
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card p-4">
+                <h4 class="mb-4">填写购票信息</h4>
+                {% set t = schedule.train %}
+                <div class="alert alert-info">
+                    <strong>{{ t.train_no }}</strong> {{ t.from_station.name }} → {{ t.to_station.name }}
+                    · {{ schedule.travel_date }} {{ t.departure_time.strftime('%H:%M') }} 开
+                </div>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">选择席别</label>
+                        {% for inv in inventories %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="seat_type" id="seat_{{ loop.index }}"
+                                   value="{{ inv.seat_type }}" {% if inv.remaining <= 0 %}disabled{% endif %}
+                                   {% if loop.first and inv.remaining > 0 %}checked{% endif %} required>
+                            <label class="form-check-label" for="seat_{{ loop.index }}">
+                                {{ inv.seat_type }} — ¥{{ "%.1f"|format(inv.price) }}
+                                <span class="text-muted">（余票 {{ inv.remaining }}）</span>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">选择乘车人</label>
+                        {% if passengers %}
+                        {% for p in passengers %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="passenger_id" id="p_{{ p.id }}"
+                                   value="{{ p.id }}" {% if loop.first %}checked{% endif %} required>
+                            <label class="form-check-label" for="p_{{ p.id }}">
+                                {{ p.name }} · {{ p.id_card[:6] }}****{{ p.id_card[-4:] }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-warning">暂无乘车人，请先 <a href="{{ url_for('order.passengers') }}">添加乘车人</a></p>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary" {% if not passengers %}disabled{% endif %}>提交订单</button>
+                    <a href="{{ url_for('train.detail', schedule_id=schedule.id) }}" class="btn btn-link">取消</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

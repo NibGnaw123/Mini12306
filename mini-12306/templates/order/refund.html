@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}退票确认{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h4 class="text-danger mb-4"><i class="bi bi-exclamation-triangle"></i> 退票确认</h4>
+                {% set t = ticket.schedule.train %}
+                <p><strong>车次：</strong>{{ t.train_no }} {{ t.from_station.name }} → {{ t.to_station.name }}</p>
+                <p><strong>日期：</strong>{{ ticket.schedule.travel_date }} {{ t.departure_time.strftime('%H:%M') }}</p>
+                <p><strong>席别/座位：</strong>{{ ticket.seat_type }} {{ ticket.seat_no or '' }}</p>
+                <p><strong>票价：</strong>¥{{ "%.2f"|format(ticket.price) }}</p>
+                <hr>
+                <p><strong>退票手续费（5%）：</strong>¥{{ "%.2f"|format(fee) }}</p>
+                <p class="text-success fs-5"><strong>预计退款：</strong>¥{{ "%.2f"|format(refund_amount) }}</p>
+                <form method="POST" class="mt-4">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('确认退票？此操作不可撤销。')">确认退票</button>
+                    <a href="{{ url_for('order.my_orders') }}" class="btn btn-link">取消</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
