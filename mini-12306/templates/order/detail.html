@@ -13,7 +13,7 @@
             </div>
             <div class="col-md-6">
                 <div class="text-muted small">状态</div>
-                <span class="badge badge-status bg-{% if order.status == '待支付' %}warning text-dark{% elif order.status == '已出票' %}success{% else %}info{% endif %}">
+                <span class="badge badge-status bg-{% if order.status == '待支付' %}warning text-dark{% elif order.status == '已出票' %}success{% elif order.status == '已发车' %}dark{% else %}info{% endif %}">
                     {{ order.status }}
                 </span>
             </div>

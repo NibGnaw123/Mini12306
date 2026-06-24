@@ -1,5 +1,6 @@
 from datetime import time, timedelta
 
+from config import Config
 from extensions import db
 from timezone import today as get_today
 from models import User, Station, Train, TrainSchedule, SeatInventory, Passenger
@@ -138,7 +139,7 @@ def _ensure_stations():
 
 def _create_schedules(train):
     today = get_today()
-    for day_offset in range(14):
+    for day_offset in range(Config.SCHEDULE_DAYS):
         travel_date = today + timedelta(days=day_offset)
         exists = TrainSchedule.query.filter_by(
             train_id=train.id, travel_date=travel_date
@@ -186,4 +187,6 @@ def seed_database():
 
     station_map = _ensure_stations()
     _ensure_trains(station_map)
+    for train in Train.query.all():
+        _create_schedules(train)
     db.session.commit()

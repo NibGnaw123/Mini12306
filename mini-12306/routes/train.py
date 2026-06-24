@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, flash, render_template, request
 
+from config import Config
 from models import Station, Train, TrainSchedule, SeatInventory
 from timezone import today as get_today
 
@@ -37,7 +38,7 @@ def _search_trains(from_station, to_station, travel_date, today, max_query_date)
 
     if date_obj < today or date_obj > max_query_date:
         date_range_message = (
-            f"仅支持查询最近14天（{today.strftime('%Y-%m-%d')} 至 "
+            f"仅支持查询最近{Config.SCHEDULE_DAYS}天（{today.strftime('%Y-%m-%d')} 至 "
             f"{max_query_date.strftime('%Y-%m-%d')}）的车次"
         )
         return None, date_range_message, "warning"
@@ -74,11 +75,11 @@ def _search_trains(from_station, to_station, travel_date, today, max_query_date)
 def search():
     stations = Station.query.order_by(Station.city, Station.name).all()
     today = get_today()
-    max_query_date = today + timedelta(days=13)
+    max_query_date = today + timedelta(days=Config.SCHEDULE_DAYS - 1)
     min_query_date_str = today.strftime("%Y-%m-%d")
     max_query_date_str = max_query_date.strftime("%Y-%m-%d")
     date_range_message = (
-        f"仅支持查询最近14天（{min_query_date_str} 至 {max_query_date_str}）的车次"
+        f"仅支持查询最近{Config.SCHEDULE_DAYS}天（{min_query_date_str} 至 {max_query_date_str}）的车次"
     )
 
     from_station, to_station, travel_date = _parse_search_params()

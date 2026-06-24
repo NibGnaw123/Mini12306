@@ -35,6 +35,10 @@ from utils import (
     generate_seat_no,
     log_action,
     combine_datetime,
+    sync_order_departed_status,
+    sync_orders_departed_status,
+    validate_change_eligibility,
+    get_changeable_schedules,
 )
 
 order_bp = Blueprint("order", __name__)
@@ -177,6 +181,8 @@ def my_orders():
     if status_filter:
         query = query.filter_by(status=status_filter)
     orders = query.order_by(Order.created_at.desc()).all()
+    if sync_orders_departed_status(orders):
+        db.session.commit()
     return render_template("order/my_orders.html", orders=orders, status_filter=status_filter)
 
 
@@ -184,6 +190,8 @@ def my_orders():
 @login_required
 def order_detail(order_id):
     order = Order.query.filter_by(id=order_id, user_id=session["user_id"]).first_or_404()
+    if sync_order_departed_status(order):
+        db.session.commit()
     return render_template("order/detail.html", order=order)
 
 
@@ -198,6 +206,10 @@ def refund(ticket_id):
 
     if ticket.status != "已出票":
         flash("该车票不可退票", "warning")
+        return redirect(url_for("order.my_orders"))
+
+    if ticket.order.status not in ("已出票", "已改签"):
+        flash("该订单不可退票", "warning")
         return redirect(url_for("order.my_orders"))
 
     schedule = ticket.schedule
@@ -258,41 +270,52 @@ def change(ticket_id):
         .filter(Ticket.id == ticket_id, Order.user_id == session["user_id"])
         .first_or_404()
     )
+    if sync_order_departed_status(ticket.order):
+        db.session.commit()
 
-    if ticket.status != "已出票":
-        flash("该车票不可改签", "warning")
+    ok, error_msg, departed = validate_change_eligibility(
+        ticket, current_app.config["CHANGE_DEADLINE_HOURS"]
+    )
+    if not ok:
+        flash(error_msg, "warning" if "不可改签" in error_msg else "danger")
         return redirect(url_for("order.my_orders"))
 
-    schedule = ticket.schedule
-    train = schedule.train
-    depart_dt = combine_datetime(schedule.travel_date, train.departure_time)
-    if now() > depart_dt - timedelta(
-        hours=current_app.config["CHANGE_DEADLINE_HOURS"]
-    ):
-        flash("发车前2小时内不可改签", "danger")
-        return redirect(url_for("order.my_orders"))
-
-    available_schedules = (
-        TrainSchedule.query.join(Train)
-        .filter(
-            TrainSchedule.travel_date >= schedule.travel_date,
-            TrainSchedule.status == "正常",
-            Train.from_station_id == train.from_station_id,
-            Train.to_station_id == train.to_station_id,
-            TrainSchedule.id != schedule.id,
-        )
-        .all()
+    available_schedules = get_changeable_schedules(
+        ticket, departed, current_app.config["CHANGE_DEADLINE_HOURS"]
     )
 
     if request.method == "POST":
+        ok, error_msg, departed = validate_change_eligibility(
+            ticket, current_app.config["CHANGE_DEADLINE_HOURS"]
+        )
+        if not ok:
+            flash(error_msg, "warning" if "不可改签" in error_msg else "danger")
+            return redirect(url_for("order.my_orders"))
+
+        available_schedules = get_changeable_schedules(
+            ticket, departed, current_app.config["CHANGE_DEADLINE_HOURS"]
+        )
         new_schedule_id = request.form.get("new_schedule_id")
         if not new_schedule_id:
             flash("请选择新车次", "warning")
             return render_template(
-                "order/change.html", ticket=ticket, schedules=available_schedules
+                "order/change.html",
+                ticket=ticket,
+                schedules=available_schedules,
+                departed=departed,
             )
 
         new_schedule = TrainSchedule.query.get(new_schedule_id)
+        allowed_ids = {s.id for s in available_schedules}
+        if not new_schedule or new_schedule.id not in allowed_ids:
+            flash("所选车次不可改签", "danger")
+            return render_template(
+                "order/change.html",
+                ticket=ticket,
+                schedules=available_schedules,
+                departed=departed,
+            )
+
         inventory = SeatInventory.query.filter_by(
             schedule_id=new_schedule_id, seat_type=ticket.seat_type
         ).with_for_update().first()
@@ -300,7 +323,10 @@ def change(ticket_id):
         if not inventory or inventory.remaining <= 0:
             flash("新车次余票不足", "danger")
             return render_template(
-                "order/change.html", ticket=ticket, schedules=available_schedules
+                "order/change.html",
+                ticket=ticket,
+                schedules=available_schedules,
+                departed=departed,
             )
 
         price_diff = round(inventory.price - ticket.price, 2)
@@ -320,7 +346,7 @@ def change(ticket_id):
         new_order = Order(
             order_no=generate_order_no(),
             user_id=session["user_id"],
-            status="已出票",
+            status="已改签",
             total_amount=inventory.price,
             paid_at=now(),
         )
@@ -362,7 +388,10 @@ def change(ticket_id):
         return redirect(url_for("order.my_orders"))
 
     return render_template(
-        "order/change.html", ticket=ticket, schedules=available_schedules
+        "order/change.html",
+        ticket=ticket,
+        schedules=available_schedules,
+        departed=departed,
     )
 
 

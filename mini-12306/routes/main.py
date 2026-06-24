@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from flask import Blueprint, render_template
 
+from config import Config
 from models import Station
 from timezone import today as get_today
 
@@ -16,5 +17,5 @@ def index():
         stations=Station.query.order_by(Station.city, Station.name).all(),
         today=today.strftime("%Y-%m-%d"),
         min_date=today.strftime("%Y-%m-%d"),
-        max_date=(today + timedelta(days=13)).strftime("%Y-%m-%d"),
+        max_date=(today + timedelta(days=Config.SCHEDULE_DAYS - 1)).strftime("%Y-%m-%d"),
     )

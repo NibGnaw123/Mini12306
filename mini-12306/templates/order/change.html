@@ -18,6 +18,16 @@
             </small>
         </div>
 
+        {% if departed %}
+        <div class="alert alert-info py-2 small mb-4">
+            原车次已发车，仅可改签至当天尚未发车的同线路车次。
+        </div>
+        {% else %}
+        <div class="alert alert-secondary py-2 small mb-4">
+            可选同线路任意日期车次，但新车次发车时间须距当前大于 2 小时。改签后不可再次改签。
+        </div>
+        {% endif %}
+
         {% if schedules %}
         <form method="POST">
             <label class="form-label fw-semibold mb-3">选择新车次（{{ ticket.seat_type }}）</label>
