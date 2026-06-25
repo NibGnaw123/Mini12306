@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}改签{% endblock %}
+{% block content %}
+<div class="container my-4">
+    <div class="page-header mb-4">
+        <h4><i class="bi bi-arrow-repeat text-primary me-2"></i>车票改签</h4>
+    </div>
+    <div class="card p-4">
+        {% set t = ticket.schedule.train %}
+        <div class="ticket-item mb-4">
+            <div class="text-muted small mb-1">原车次</div>
+            <div class="fw-bold">
+                {{ t.train_no }} {{ t.from_station.name }} → {{ t.to_station.name }}
+            </div>
+            <small class="text-muted">
+                {{ ticket.schedule.travel_date }} {{ t.departure_time.strftime('%H:%M') }}
+                · {{ ticket.seat_type }} ¥{{ ticket.price }}
+            </small>
+        </div>
+
+        {% if departed %}
+        <div class="alert alert-info py-2 small mb-4">
+            原车次已发车，仅可改签至当天尚未发车的同线路车次。
+        </div>
+        {% else %}
+        <div class="alert alert-secondary py-2 small mb-4">
+            可选同线路任意日期车次，但新车次发车时间须距当前大于 2 小时。改签后不可再次改签。
+        </div>
+        {% endif %}
+
+        {% if schedules %}
+        <form method="POST">
+            <label class="form-label fw-semibold mb-3">选择新车次（{{ ticket.seat_type }}）</label>
+            {% for sch in schedules %}
+            {% set nt = sch.train %}
+            {% set inv = sch.inventories | selectattr('seat_type', 'equalto', ticket.seat_type) | first %}
+            <label class="option-card d-block {% if not inv or inv.remaining <= 0 %}opacity-50{% endif %}">
+                <input type="radio" name="new_schedule_id" value="{{ sch.id }}"
+                       {% if inv and inv.remaining > 0 %}{% if loop.first %}checked{% endif %}{% else %}disabled{% endif %}>
+                <strong>{{ nt.train_no }}</strong> {{ sch.travel_date }}
+                {{ nt.departure_time.strftime('%H:%M') }} - {{ nt.arrival_time.strftime('%H:%M') }}
+                {% if inv %}
+                · <span class="text-danger fw-semibold">¥{{ inv.price }}</span> · 余票 {{ inv.remaining }}
+                {% if inv.price > ticket.price %}
+                <span class="text-danger small">（需补 ¥{{ "%.1f"|format(inv.price - ticket.price) }}）</span>
+                {% elif inv.price < ticket.price %}
+                <span class="text-success small">（退 ¥{{ "%.1f"|format(ticket.price - inv.price) }}）</span>
+                {% endif %}
+                {% else %}
+                <span class="text-muted">无此席别</span>
+                {% endif %}
+            </label>
+            {% endfor %}
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('确认改签？')">
+                    确认改签
+                </button>
+                <a href="{{ url_for('order.my_orders') }}" class="btn btn-outline-secondary">取消</a>
+            </div>
+        </form>
+        {% else %}
+        <div class="empty-state py-4">
+            <i class="bi bi-calendar-x"></i>
+            <p class="mb-3">暂无可改签的车次</p>
+            <a href="{{ url_for('order.my_orders') }}" class="btn btn-outline-primary">返回订单</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

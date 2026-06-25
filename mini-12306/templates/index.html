@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}首页 - Mini-12306{% endblock %}
+{% block content %}
+<div class="hero text-center hero-compact">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-2">
+            <i class="bi bi-train-front-fill"></i> Mini-12306
+        </h1>
+        <p class="lead mb-0 opacity-90">查询、购票、退票、改签 — 一站完成</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="search-panel mb-5">
+        <h5 class="fw-bold mb-4"><i class="bi bi-search text-primary me-2"></i>快速查询车次</h5>
+        <form method="POST" action="{{ url_for('train.search') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">出发地</label>
+                <select name="from_station" class="form-select" required>
+                    <option value="">请选择出发站</option>
+                    {% for s in stations %}
+                    <option value="{{ s.name }}">{{ s.city }} · {{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1 d-none d-md-flex align-items-end justify-content-center pb-2">
+                <button type="button" class="swap-btn" id="swapStations" title="交换出发/到达">
+                    <i class="bi bi-arrow-left-right"></i>
+                </button>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">目的地</label>
+                <select name="to_station" class="form-select" required>
+                    <option value="">请选择到达站</option>
+                    {% for s in stations %}
+                    <option value="{{ s.name }}">{{ s.city }} · {{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">出发日期</label>
+                <input type="date" name="travel_date" class="form-control"
+                       value="{{ today }}" min="{{ min_date }}" max="{{ max_date }}" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-search me-1"></i>查询
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card card-hover feature-card">
+                <div class="icon-wrap blue"><i class="bi bi-person-check"></i></div>
+                <h5 class="fw-bold">实名注册</h5>
+                <p class="text-muted small mb-0">身份证实名认证，安全购票</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-hover feature-card">
+                <div class="icon-wrap green"><i class="bi bi-ticket-perforated"></i></div>
+                <h5 class="fw-bold">在线购票</h5>
+                <p class="text-muted small mb-0">选车次、选席别，快速下单</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-hover feature-card">
+                <div class="icon-wrap orange"><i class="bi bi-arrow-repeat"></i></div>
+                <h5 class="fw-bold">退票改签</h5>
+                <p class="text-muted small mb-0">灵活处理行程变更</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-hover feature-card">
+                <div class="icon-wrap cyan"><i class="bi bi-bell"></i></div>
+                <h5 class="fw-bold">消息通知</h5>
+                <p class="text-muted small mb-0">支付、退票、改签实时提醒</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('swapStations')?.addEventListener('click', function () {
+    const from = document.querySelector('[name="from_station"]');
+    const to = document.querySelector('[name="to_station"]');
+    const tmp = from.value;
+    from.value = to.value;
+    to.value = tmp;
+});
+</script>
+{% endblock %}

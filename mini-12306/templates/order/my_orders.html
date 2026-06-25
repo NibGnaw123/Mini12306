@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}我的订单 - Mini-12306{% endblock %}
+{% block content %}
+<div class="container my-4">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+            <h4><i class="bi bi-receipt text-primary me-2"></i>我的订单</h4>
+            <p class="subtitle">查看和管理您的购票记录</p>
+        </div>
+        <div class="filter-pills">
+            <a href="{{ url_for('order.my_orders') }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">全部</a>
+            <a href="{{ url_for('order.my_orders', status='待支付') }}" class="btn btn-sm {% if status_filter == '待支付' %}btn-primary{% else %}btn-outline-primary{% endif %}">待支付</a>
+            <a href="{{ url_for('order.my_orders', status='已出票') }}" class="btn btn-sm {% if status_filter == '已出票' %}btn-primary{% else %}btn-outline-primary{% endif %}">已出票</a>
+            <a href="{{ url_for('order.my_orders', status='已发车') }}" class="btn btn-sm {% if status_filter == '已发车' %}btn-primary{% else %}btn-outline-primary{% endif %}">已发车</a>
+            <a href="{{ url_for('order.my_orders', status='已退票') }}" class="btn btn-sm {% if status_filter == '已退票' %}btn-primary{% else %}btn-outline-primary{% endif %}">已退票</a>
+            <a href="{{ url_for('order.my_orders', status='已改签') }}" class="btn btn-sm {% if status_filter == '已改签' %}btn-primary{% else %}btn-outline-primary{% endif %}">已改签</a>
+        </div>
+    </div>
+
+    {% if orders %}
+    {% for order in orders %}
+    <div class="card mb-3 order-card
+        {% if order.status == '待支付' %}status-pending
+        {% elif order.status == '已支付' %}status-paid
+        {% elif order.status == '已出票' %}status-ticketed
+        {% elif order.status == '已发车' %}status-departed
+        {% elif order.status == '已退票' %}status-refunded
+        {% elif order.status == '已改签' %}status-changed{% endif %}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-hash me-1 text-muted"></i>{{ order.order_no }}</span>
+            <span class="badge badge-status bg-{% if order.status == '待支付' %}warning text-dark{% elif order.status == '已出票' %}success{% elif order.status == '已发车' %}dark{% elif order.status == '已退票' %}secondary{% elif order.status == '已改签' %}primary{% else %}info{% endif %}">
+                {{ order.status }}
+            </span>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                <i class="bi bi-clock me-1"></i>下单时间：{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+            {% for ticket in order.tickets %}
+            {% set t = ticket.schedule.train %}
+            <div class="ticket-item mb-2">
+                <div class="row align-items-center g-2">
+                    <div class="col-md-8">
+                        <div class="fw-bold mb-1">
+                            <span class="text-primary">{{ t.train_no }}</span>
+                            {{ t.from_station.name }}
+                            <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                            {{ t.to_station.name }}
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar3 me-1"></i>{{ ticket.schedule.travel_date }}
+                            {{ t.departure_time.strftime('%H:%M') }} 开
+                            · {{ ticket.seat_type }}
+                            {% if ticket.seat_no %}· 座位 {{ ticket.seat_no }}{% endif %}
+                            · {{ ticket.passenger.name }}
+                        </small>
+                    </div>
+                    <div class="col-md-2 text-md-end text-danger fw-bold">¥{{ "%.1f"|format(ticket.price) }}</div>
+                    <div class="col-md-2 text-md-end">
+                        {% if order.status == '待支付' %}
+                        <a href="{{ url_for('order.pay', order_id=order.id) }}" class="btn btn-sm btn-primary">去支付</a>
+                        {% elif ticket.status == '已出票' %}
+                        {% if order.status in ['已出票', '已改签'] %}
+                        <a href="{{ url_for('order.refund', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('确认退票？')">退票</a>
+                        {% endif %}
+                        {% if order.status in ['已出票', '已发车'] %}
+                        <a href="{{ url_for('order.change', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-warning">改签</a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="text-end fw-bold mt-3 pt-2 border-top">
+                合计 <span class="text-danger fs-5">¥{{ "%.2f"|format(order.total_amount) }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p class="mb-3">暂无订单</p>
+            <a href="{{ url_for('train.search') }}" class="btn btn-primary">去查询车次</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

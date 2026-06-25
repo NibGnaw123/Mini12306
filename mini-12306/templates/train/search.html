@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}车次查询 - Mini-12306{% endblock %}
+{% block content %}
+<div class="hero hero-compact">
+    <div class="container text-center text-white">
+        <h2 class="fw-bold mb-1"><i class="bi bi-search"></i> 车次查询</h2>
+        <p class="mb-0 opacity-90">查询未来 15 天内的列车班次与余票</p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="search-panel search-panel-page mb-4">
+        <form method="POST" id="searchForm">
+            <div class="row g-3 align-items-start search-form-row flex-md-nowrap">
+                <div class="col">
+                    <label class="form-label"><i class="bi bi-geo-alt me-1"></i>出发地</label>
+                    <select name="from_station" id="fromStation" class="form-select" required>
+                        <option value="">请选择出发站</option>
+                        {% for s in stations %}
+                        <option value="{{ s.name }}" {% if s.name == from_station %}selected{% endif %}>{{ s.city }} · {{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto search-swap-col">
+                    <button type="button" class="swap-btn" id="swapStations" title="交换出发/到达">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                </div>
+                <div class="col">
+                    <label class="form-label"><i class="bi bi-geo-alt-fill me-1"></i>目的地</label>
+                    <select name="to_station" id="toStation" class="form-select" required>
+                        <option value="">请选择到达站</option>
+                        {% for s in stations %}
+                        <option value="{{ s.name }}" {% if s.name == to_station %}selected{% endif %}>{{ s.city }} · {{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col search-date-col">
+                    <label class="form-label"><i class="bi bi-calendar3 me-1"></i>出发日期</label>
+                    <input type="date" name="travel_date" id="travelDate" class="form-control"
+                           value="{{ travel_date }}" min="{{ min_query_date }}" max="{{ max_query_date }}" required>
+                    <div class="quick-dates mt-2">
+                        {% for d in quick_dates %}
+                        <button type="button" class="quick-date-btn {% if travel_date == d.value %}active{% endif %}"
+                                data-date="{{ d.value }}">{{ d.label }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-auto search-submit-col">
+                    <button type="submit" class="btn btn-primary search-submit-btn">
+                        <i class="bi bi-search me-1"></i>查询
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if not has_searched %}
+    <div class="search-tips card">
+        <div class="card-body d-flex align-items-start gap-3">
+            <div class="tips-icon"><i class="bi bi-train-front"></i></div>
+            <div>
+                <h6 class="fw-bold mb-2">查询提示</h6>
+                <ul class="mb-0 text-muted small ps-3">
+                    <li>支持查询今日起 15 天内的车次余票</li>
+                    <li>点击席别余票可直接购票（需先登录）</li>
+                    <li>发车前 2 小时内不可退票或改签</li>
+                    <li>未发车订单可改签至同线路任意发车时间距当前大于 2 小时的车次（每单限改签一次）</li>
+                    <li>已发车订单可改签至当天尚未发车的同线路车次</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="query-summary">
+        <div class="query-route">
+            <span class="query-station">{{ from_station }}</span>
+            <span class="query-arrow"><i class="bi bi-arrow-right"></i></span>
+            <span class="query-station">{{ to_station }}</span>
+        </div>
+        <div class="query-meta">
+            <span><i class="bi bi-calendar3 me-1"></i>{{ travel_date }}</span>
+            <span class="query-divider">|</span>
+            <span>共 <strong>{{ results|length }}</strong> 趟列车</span>
+        </div>
+    </div>
+
+    {% if results %}
+    <div class="card search-results-card">
+        <div class="table-responsive d-none d-lg-block">
+            <table class="table table-app table-search mb-0">
+                <thead>
+                    <tr>
+                        <th>车次</th>
+                        <th>出发站 / 到达站</th>
+                        <th>出发</th>
+                        <th>到达</th>
+                        <th>历时</th>
+                        {% for st in seat_types %}
+                        <th class="text-center seat-col">{{ st }}</th>
+                        {% endfor %}
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    {% set sch = item.schedule %}
+                    {% set t = sch.train %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('train.detail', schedule_id=sch.id) }}" class="train-no train-no-link">
+                                {{ t.train_no }}
+                            </a>
+                            <div class="train-name-sub">{{ t.name }}</div>
+                        </td>
+                        <td>
+                            <div class="station-pair">
+                                <span>{{ t.from_station.name }}</span>
+                                <i class="bi bi-arrow-right text-muted mx-1"></i>
+                                <span>{{ t.to_station.name }}</span>
+                            </div>
+                        </td>
+                        <td><span class="time-cell">{{ t.departure_time.strftime('%H:%M') }}</span></td>
+                        <td><span class="time-cell">{{ t.arrival_time.strftime('%H:%M') }}</span></td>
+                        <td class="text-muted">{{ t.duration_minutes // 60 }}h{{ '%02d'|format(t.duration_minutes % 60) }}m</td>
+                        {% for st in seat_types %}
+                        {% set inv = item.inventories.get(st) %}
+                        <td class="text-center seat-col">
+                            {% if inv %}
+                            {% if inv.remaining > 0 %}
+                            <a href="{{ url_for('order.book', schedule_id=sch.id) if session.get('user_id') else url_for('auth.login') }}"
+                               class="seat-stock has-stock" title="¥{{ '%.1f'|format(inv.price) }}">
+                                {{ inv.remaining }}
+                            </a>
+                            <div class="seat-price">¥{{ '%.0f'|format(inv.price) }}</div>
+                            {% else %}
+                            <span class="seat-stock no-stock">无</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="seat-stock na-stock">--</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="text-nowrap action-col">
+                            <a href="{{ url_for('train.detail', schedule_id=sch.id) }}" class="btn btn-sm btn-outline-primary">详情</a>
+                            {% if session.get('user_id') %}
+                            <a href="{{ url_for('order.book', schedule_id=sch.id) }}" class="btn btn-sm btn-primary">购票</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-lg-none search-results-mobile">
+            {% for item in results %}
+            {% set sch = item.schedule %}
+            {% set t = sch.train %}
+            <div class="result-mobile-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <a href="{{ url_for('train.detail', schedule_id=sch.id) }}" class="train-no train-no-link fs-5">
+                            {{ t.train_no }}
+                        </a>
+                        <div class="text-muted small">{{ t.from_station.name }} → {{ t.to_station.name }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="time-cell">{{ t.departure_time.strftime('%H:%M') }}</div>
+                        <div class="text-muted small">{{ t.duration_minutes // 60 }}h{{ '%02d'|format(t.duration_minutes % 60) }}m</div>
+                    </div>
+                </div>
+                <div class="seat-grid-mobile">
+                    {% for st in seat_types %}
+                    {% set inv = item.inventories.get(st) %}
+                    <div class="seat-grid-item">
+                        <div class="seat-type-label">{{ st }}</div>
+                        {% if inv and inv.remaining > 0 %}
+                        <a href="{{ url_for('order.book', schedule_id=sch.id) if session.get('user_id') else url_for('auth.login') }}"
+                           class="seat-stock has-stock">{{ inv.remaining }}</a>
+                        <div class="seat-price">¥{{ '%.0f'|format(inv.price) }}</div>
+                        {% elif inv %}
+                        <span class="seat-stock no-stock">无</span>
+                        {% else %}
+                        <span class="seat-stock na-stock">--</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{{ url_for('train.detail', schedule_id=sch.id) }}" class="btn btn-sm btn-outline-primary flex-grow-1">详情</a>
+                    {% if session.get('user_id') %}
+                    <a href="{{ url_for('order.book', schedule_id=sch.id) }}" class="btn btn-sm btn-primary flex-grow-1">购票</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-train-front"></i>
+            <p class="mb-2 fw-semibold">未找到符合条件的车次</p>
+            <p class="mb-0 small">请尝试更换日期或调整出发/到达站后重新查询</p>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('swapStations')?.addEventListener('click', function () {
+    const from = document.getElementById('fromStation');
+    const to = document.getElementById('toStation');
+    const tmp = from.value;
+    from.value = to.value;
+    to.value = tmp;
+});
+
+document.querySelectorAll('.quick-date-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        const input = document.getElementById('travelDate');
+        input.value = this.dataset.date;
+        document.querySelectorAll('.quick-date-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+</script>
+{% endblock %}

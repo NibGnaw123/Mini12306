@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ schedule.train.train_no }} 车次详情{% endblock %}
+{% block content %}
+<div class="container my-4">
+    {% set t = schedule.train %}
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-2">
+                <div>
+                    <h3 class="fw-bold mb-1">
+                        <span class="text-primary">{{ t.train_no }}</span>
+                        <small class="text-muted fs-6">{{ t.name }}</small>
+                    </h3>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-calendar3 me-1"></i>{{ schedule.travel_date }}
+                        <span class="badge bg-success badge-status ms-2">{{ schedule.status }}</span>
+                    </p>
+                </div>
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('order.book', schedule_id=schedule.id) }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-ticket-perforated me-1"></i>立即购票
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">登录后购票</a>
+                {% endif %}
+            </div>
+
+            <div class="route-timeline">
+                <div class="route-point">
+                    <div class="time">{{ t.departure_time.strftime('%H:%M') }}</div>
+                    <div class="station">{{ t.from_station.name }}</div>
+                </div>
+                <div class="route-line">
+                    <i class="bi bi-train-front"></i>
+                    <div class="duration">
+                        {{ t.duration_minutes // 60 }}小时{{ t.duration_minutes % 60 }}分 · {{ t.distance_km }}公里
+                    </div>
+                </div>
+                <div class="route-point">
+                    <div class="time">{{ t.arrival_time.strftime('%H:%M') }}</div>
+                    <div class="station">{{ t.to_station.name }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-grid-3x3-gap me-2 text-primary"></i>席别与票价
+        </div>
+        <div class="table-responsive">
+            <table class="table table-app mb-0">
+                <thead>
+                    <tr><th>席别</th><th>票价</th><th>总座位</th><th>余票</th><th>状态</th></tr>
+                </thead>
+                <tbody>
+                    {% for inv in inventories %}
+                    <tr>
+                        <td class="fw-semibold">{{ inv.seat_type }}</td>
+                        <td class="text-danger fw-bold fs-5">¥{{ "%.1f"|format(inv.price) }}</td>
+                        <td>{{ inv.total }}</td>
+                        <td>{{ inv.remaining }}</td>
+                        <td>
+                            {% if inv.remaining > 10 %}
+                            <span class="badge bg-success badge-status">充足</span>
+                            {% elif inv.remaining > 0 %}
+                            <span class="badge bg-warning text-dark badge-status">紧张</span>
+                            {% else %}
+                            <span class="badge bg-secondary badge-status">无票</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <a href="{{ url_for('train.search') }}" class="btn btn-link mt-3 px-0">
+        <i class="bi bi-arrow-left"></i> 返回查询
+    </a>
+</div>
+{% endblock %}
